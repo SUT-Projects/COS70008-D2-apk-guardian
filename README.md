@@ -1,11 +1,11 @@
 # COS70008-D2-apk-guardian
 
-Gurlivleen's Design
+Hanzala's Design
 
 Android Malware Detection
 
-Dataset - CIC-AndMal2017
+Dataset - CIC-
 
 Approach - Hybrid Static Analysis
 
-ML Model - Static + Dynamic + PCA + LightBGM
+ML Model - Deep Belief Network (DBN) + Logistic Regression
