@@ -1,0 +1,15 @@
+.venv
+node_modules
+.idea
+*.iml
+*.log
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info
+*.egg
+*.apk
+*.ap_
+*.dex
+*.class
