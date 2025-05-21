@@ -1,141 +1,137 @@
+"use client";
 import {
-  Navbar as HeroUINavbar,
+  Navbar as NextUINavbar,
   NavbarContent,
-  NavbarMenu,
-  NavbarMenuToggle,
-  NavbarBrand,
   NavbarItem,
+  NavbarBrand,
+  NavbarMenuToggle,
+  NavbarMenu,
   NavbarMenuItem,
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
-import { Link } from "@heroui/link";
-import { Input } from "@heroui/input";
-import { link as linkStyles } from "@heroui/theme";
-import NextLink from "next/link";
-import clsx from "clsx";
-
-import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { Logout, AccountCircle } from "@mui/icons-material";
 import {
-  TwitterIcon,
-  GithubIcon,
-  DiscordIcon,
-  HeartFilledIcon,
-  SearchIcon,
-  Logo,
-} from "@/components/icons";
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@heroui/dropdown";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import DarkMode from "@mui/icons-material/DarkMode";
+import LightMode from "@mui/icons-material/LightMode";
+import clsx from "clsx";
+import Image from "next/image";
 
-export const Navbar = () => {
-  const searchInput = (
-    <Input
-      aria-label="Search"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder="Search..."
-      startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="search"
-    />
-  );
+// import { ROUTES } from "./sidebar/sidebarRoutes";
+
+import { roboto } from "@/config/fonts";
+import { RouteInterface } from "@/types/IRoute";
+
+export const Navbar = ({ routes }: { routes: Array<RouteInterface> }) => {
+  const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const onItemSelection = async (key: string | null) => {
+    if (key === null) return;
+    if (key === "switchTheme") setTheme(theme === "light" ? "dark" : "light");
+    if (key === "logout") {
+      // TODO: Implement Logout Flow
+    }
+  };
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
-      <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
-        <NavbarBrand as="li" className="gap-3 max-w-fit">
-          <NextLink className="flex justify-start items-center gap-1" href="/">
-            <Logo />
-            <p className="font-bold text-inherit">ACME</p>
-          </NextLink>
+    <NextUINavbar
+      isBlurred
+      isMenuOpen={isMenuOpen}
+      maxWidth="full"
+      position="sticky"
+      onMenuOpenChange={setIsMenuOpen}
+    >
+      <NavbarContent className="basis-1/6 sm:basis-full" justify="start">
+        <NavbarMenuToggle className="flex md:hidden" />
+        <NavbarBrand className="max-w-fit">
+          <Link className="flex md:hidden justify-start items-center" href="/">
+            <Image
+              alt="APK Guardian"
+              height={32}
+              src="/logo.png"
+              width={32}
+            />
+          </Link>
         </NavbarBrand>
-        <ul className="hidden lg:flex gap-4 justify-start ml-2">
-          {siteConfig.navItems.map((item) => (
-            <NavbarItem key={item.href}>
-              <NextLink
-                className={clsx(
-                  linkStyles({ color: "foreground" }),
-                  "data-[active=true]:text-primary data-[active=true]:font-medium",
-                )}
-                color="foreground"
-                href={item.href}
+      </NavbarContent>
+
+      <NavbarContent className="flex basis-1/5 sm:basis-full" justify="end">
+        <NavbarItem>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                className="text-sm font-normal text-default-600 bg-default-100"
+                startContent={<AccountCircle />}
+                variant="flat"
               >
-                {item.label}
-              </NextLink>
-            </NavbarItem>
-          ))}
-        </ul>
-      </NavbarContent>
-
-      <NavbarContent
-        className="hidden sm:flex basis-1/5 sm:basis-full"
-        justify="end"
-      >
-        <NavbarItem className="hidden sm:flex gap-2">
-          <Link isExternal aria-label="Twitter" href={siteConfig.links.twitter}>
-            <TwitterIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Discord" href={siteConfig.links.discord}>
-            <DiscordIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-            <GithubIcon className="text-default-500" />
-          </Link>
-          <ThemeSwitch />
+                <span className="font-bold text-sm">
+                  {"gurlivleen@example.com"}
+                </span>
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              selectionMode="single"
+              onSelectionChange={({ anchorKey }) =>
+                onItemSelection(anchorKey ?? null)
+              }
+            >
+              <DropdownItem
+                key="switchTheme"
+                startContent={
+                  theme === "light" ? (
+                    <DarkMode className="text-default-500" />
+                  ) : (
+                    <LightMode className="text-default-500" />
+                  )
+                }
+              >
+                Switch Theme
+              </DropdownItem>
+              <DropdownItem
+                key="logout"
+                startContent={
+                  <Logout className="text-default-500" sx={{ fontSize: 22 }} />
+                }
+              >
+                Sign Out
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         </NavbarItem>
-        <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
-        <NavbarItem className="hidden md:flex">
-          <Button
-            isExternal
-            as={Link}
-            className="text-sm font-normal text-default-600 bg-default-100"
-            href={siteConfig.links.sponsor}
-            startContent={<HeartFilledIcon className="text-danger" />}
-            variant="flat"
-          >
-            Sponsor
-          </Button>
-        </NavbarItem>
-      </NavbarContent>
-
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-          <GithubIcon className="text-default-500" />
-        </Link>
-        <ThemeSwitch />
-        <NavbarMenuToggle />
       </NavbarContent>
 
       <NavbarMenu>
-        {searchInput}
-        <div className="mx-4 mt-2 flex flex-col gap-2">
-          {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
-              <Link
-                color={
-                  index === 2
-                    ? "primary"
-                    : index === siteConfig.navMenuItems.length - 1
-                      ? "danger"
-                      : "foreground"
-                }
-                href="#"
-                size="lg"
+        {routes.map((ele) => {
+          return (
+            <Link
+              key={ele.path}
+              className="w-full"
+              href={ele.path}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <NavbarMenuItem
+                className="flex gap-2 items-center"
+                isActive={pathname === ele.path}
               >
-                {item.label}
-              </Link>
-            </NavbarMenuItem>
-          ))}
-        </div>
+                {ele.icon && <ele.icon />}
+                <span className={clsx(roboto.className, "flex-1")}>
+                  {ele.label}
+                </span>
+              </NavbarMenuItem>
+            </Link>
+          );
+        })}
       </NavbarMenu>
-    </HeroUINavbar>
+    </NextUINavbar>
   );
 };
