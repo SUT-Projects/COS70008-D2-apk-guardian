@@ -2,6 +2,9 @@ from services import UserService
 from flask import request, jsonify
 from schemas import User
 from flask_jwt_extended import create_access_token, create_refresh_token
+from datetime import timedelta, datetime
+from bson.timestamp import Timestamp
+from hashlib import sha256
 
 
 class AuthService:
@@ -65,9 +68,74 @@ class AuthService:
                 "status": 500  # Internal Server Error
             }
         
-        
-
     def register(self, username, password):
         if self.user_service.get_user_by_username(username):
             return None
         return self.user_service.create_user(username, password)
+    
+    def forgot_password(self):
+        try:
+            request_json = request.get_json()
+            # Check for required fields in request body
+            if "email" not in request_json:
+                return {
+                    "error": True,
+                    "message": "Email is required",
+                    "status": 400  # Bad Request
+                }
+            
+            email = request_json["email"]
+            # Validate email format
+            user = self.user_service.find_user_by_email(email)
+            if user is None:
+                return {
+                    "error": True,
+                    "message": "User not found",
+                    "status": 404  # Not Found
+                }
+                
+            reset_token = create_refresh_token(identity=email, expires_delta=timedelta(minutes=10))
+            
+            return jsonify({
+                "error": False,
+                "message": "Reset token generated successfully",
+                "reset_token": reset_token,
+                "status": 200
+            }), 200
+            
+        except Exception as ex:
+            return {
+                "error": True,
+                "message": str(ex),
+                "status": 500  # Internal Server Error
+            }
+        
+    def reset_password(self, email, new_password):
+        try:
+            fetched_user = self.user_service.find_user_by_email(email)
+            if fetched_user is None:
+                return {
+                    "error": True,
+                    "message": "User not found",
+                    "status": 404  # Not Found
+                }
+                
+            user: User = User.to_object(fetched_user)
+            hashed_password = sha256(new_password.encode()).hexdigest()
+            self.user_service.update_user(user._id, {
+                "password": hashed_password,
+                "updated_date": Timestamp(datetime.now(), 1)
+            })
+                
+            return {
+                "error": False,
+                "message": "Password reset successfully",
+                "status": 200
+            }
+            
+        except Exception as ex:
+            return {
+                "error": True,
+                "message": str(ex),
+                "status": 500  # Internal Server Error
+            }

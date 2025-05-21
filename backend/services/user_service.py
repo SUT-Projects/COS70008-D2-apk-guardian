@@ -127,7 +127,23 @@ class UserService:
 
 
     def update_user(self, user_id, user_data):
-        pass
+        try:
+            updated_result = self.db.update_one(self.collection_name, user_id, user_data)
+
+            if isinstance(updated_result, str):
+                # If the result is an error message string
+                return {"error": True, "message": updated_result}
+
+            if updated_result.modified_count == 0:
+                return {"error": True, "message": "No changes made or user not found."}
+
+            return {
+                "error": False, 
+                "message": "User updated successfully."
+            }
+
+        except Exception as e:
+            return {"error": True, "message": f"An error occurred: {str(e)}"}
 
     def delete_user(self, user_id):
         pass
