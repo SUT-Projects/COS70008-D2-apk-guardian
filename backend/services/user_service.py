@@ -11,8 +11,16 @@ class UserService:
         self.db = get_database_instance()
         self.collection_name = "users"
         
-    def find_user_by_email_and_password(self, email, password) -> None:
-        pass
+    def find_user_by_email(self, email, **kwagrs) -> None:
+        filter_dict: dict = {
+            "email": email
+        }
+        
+        if "password" in kwagrs:
+            filter_dict["password"] = sha256(kwagrs["password"].encode()).hexdigest()
+
+        fetched_document = self.db.get_collection(self.collection_name).find_one(filter_dict)
+        return fetched_document if fetched_document is not None else None
     
     def get_user_by_id(self, user_id):
         pass

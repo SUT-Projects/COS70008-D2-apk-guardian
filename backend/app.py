@@ -1,10 +1,15 @@
 from flask import Flask, request
 from flask_cors import CORS
 from datetime import datetime
+from flask_jwt_extended import JWTManager
 from controllers import prediction_route_bp, auth_router_bp, user_router_bp
 
 app: Flask = Flask(__name__)
+app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'  # Change this to a random secret key
+app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']
+
 CORS(app)
+JWTManager(app)
 
 app.register_blueprint(prediction_route_bp)
 app.register_blueprint(auth_router_bp)

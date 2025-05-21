@@ -1,6 +1,7 @@
 from services import UserService
-from flask import request
-from hashlib import sha256
+from flask import request, jsonify
+from schemas import User
+from flask_jwt_extended import create_access_token, create_refresh_token
 
 
 class AuthService:
@@ -8,21 +9,63 @@ class AuthService:
         self.user_service = user_service
 
     def login(self):
-        request_json = request.get_json()
-        password = sha256(
-        request_json["password"].encode()).hexdigest()
-        # Check for required fields in request body
-        if "email" not in request_json or "password" not in request_json:
+        try:
+            request_json = request.get_json()
+            # Check for required fields in request body
+            if "email" not in request_json or "password" not in request_json:
+                return {
+                    "error": True,
+                    "message": "Missing required fields in request body",
+                    "status": 400  # Bad Request
+                }
+                
+
+            fetch_user = self.user_service.find_user_by_email(
+                request_json["email"],
+                password=request_json["password"]
+            )
+            if fetch_user is None:
+                return {
+                    "error": True,
+                    "message": "Invalid email or password",
+                    "status": 401  # Unauthorized
+                }
+            
+            user = User.to_object(fetch_user)
+            if user.account_status == 2:
+                return jsonify({
+                    "error": True,
+                    "message": "Login Failed: Account has been suspended",
+                    "status": 200
+                })
+
+            if user.account_status == 3:
+                return jsonify({
+                    "error": True,
+                    "message": "Login Failed: Account has been deactivated",
+                    "status": 200
+                })
+                
+            access_token = create_access_token(identity=user.to_json())
+            refresh_token = create_refresh_token(identity=user.to_json())
+            
+            return jsonify({
+                "error": False,
+                "message": "Login successful",
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user": user.to_json(),
+                "status": 200
+            }), 200
+            
+        except Exception as ex:
             return {
                 "error": True,
-                "message": "Missing required fields in request body",
-                "status": 400  # Bad Request
+                "message": str(ex),
+                "status": 500  # Internal Server Error
             }
-            
-            
-        user = self.user_service.find_user_by_email_and_password(request_json["email"], password)
-        if not user:
-            return None
+        
+        
 
     def register(self, username, password):
         if self.user_service.get_user_by_username(username):
