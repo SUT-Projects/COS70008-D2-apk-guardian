@@ -5,7 +5,18 @@ from bson.objectid import ObjectId
 
 
 class Database:
-    def __init__(self, database_name="quiz_database") -> None:
+    _instance = None
+    
+    # Singleton pattern to ensure only one instance of the database connection
+    # is created throughout the application lifecycle.`
+    def __new__(cls, database_name="quiz_database"):
+        if cls._instance is None:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance._initialize_instance(database_name)
+        
+        return cls._instance
+    
+    def _initialize_instance(self, database_name="quiz_database") -> None:
         self.client = MongoClient(config.MONGODB_URI)
         self.db_instance = self.client[database_name]
 
