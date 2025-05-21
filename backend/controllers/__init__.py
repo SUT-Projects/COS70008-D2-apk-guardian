@@ -1,0 +1,3 @@
+from .prediction_controller import prediction_route_bp
+from .auth_controller import auth_router_bp
+from .user_controller import user_router_bp
