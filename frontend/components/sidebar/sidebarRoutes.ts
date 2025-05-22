@@ -29,14 +29,9 @@ export const ADMIN_ROUTES: Array<RouteInterface> = [
     icon: ModelTraining,
   },
   {
-    path: "/admin/uploaded-apks",
-    label: "Uploaded APKs",
+    path: "/admin/activity-report",
+    label: "Activity and Report",
     icon: Android,
-  },
-  {
-    path: "/admin/uploaded-datasets",
-    label: "Uploaded Datasets",
-    icon: LibraryBooks,
   },
 ];
 
