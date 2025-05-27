@@ -3,6 +3,7 @@ import CrendialProvider from "next-auth/providers/credentials";
 
 import { loginSchema } from "@/types/loginSchema";
 import { USER_LOGIN_URL } from "@/config/api-endpoints";
+import { jwtDecode } from "jwt-decode";
 
 export const AuthOptions: NextAuthOptions = {
   debug: true,
@@ -45,12 +46,18 @@ export const AuthOptions: NextAuthOptions = {
             );
           }
 
-          const user = await res.json();
-          if (user && user.id) {
-            return user;
+          const result = await res.json();
+          console.log("Auth response:", result);
+          if (result.error) {
+            console.error("Authentication error:", result.message);
+            throw new Error(result.message);
           }
 
-          return null;
+          return {
+            ...result.user,
+            access_token: result.access_token,
+            refresh_token: result.refresh_token,
+          };
         } catch (error) {
           console.error("Auth error:", error);
           throw error;
@@ -59,14 +66,26 @@ export const AuthOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/login",
+    signIn: "/auth/login",
   },
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60, // 1 hour
   },
   callbacks: {
+
     async jwt({ token, user }) {
       console.log("JWT callback:", token, user);
+      if (user) {
+        const loginUser = user as any;
+        // If user is present, it means this is the first time the JWT is being created
+        const { exp } = jwtDecode(loginUser.access_token)
+        
+        token.access_token = loginUser.access_token;
+        token.refresh_token = loginUser.refresh_token;
+        token.user_type = loginUser.user_type;
+        token.expiry = new Date(exp! * 1000).toISOString(); // Convert to ISO string
+      }
       return {
         ...token,
         ...user,
@@ -74,8 +93,8 @@ export const AuthOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      console.log("Session callback:", session, token);
       if (token) {
+        session.expires = (token.expiry as any) || new Date(Date.now() + 60 * 60 * 1000).toISOString(); // Default to 1 hour if expiry is not set
         session.user = {
           ...session.user,
           ...token,

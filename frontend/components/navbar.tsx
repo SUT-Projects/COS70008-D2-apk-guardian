@@ -18,8 +18,8 @@ import {
 } from "@heroui/dropdown";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { use, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import DarkMode from "@mui/icons-material/DarkMode";
 import LightMode from "@mui/icons-material/LightMode";
 import clsx from "clsx";
@@ -29,8 +29,12 @@ import Image from "next/image";
 
 import { roboto } from "@/config/fonts";
 import { RouteInterface } from "@/types/IRoute";
+import toast from "react-hot-toast";
+import { USER_LOGOUT_URL } from "@/config/api-endpoints";
+import { getSession, signOut } from "next-auth/react";
 
 export const Navbar = ({ routes }: { routes: Array<RouteInterface> }) => {
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -40,8 +44,27 @@ export const Navbar = ({ routes }: { routes: Array<RouteInterface> }) => {
     if (key === "switchTheme") setTheme(theme === "light" ? "dark" : "light");
     if (key === "logout") {
       // TODO: Implement Logout Flow
+      handleLogout();
     }
   };
+
+  // wherever handleLogout lives in your React/Client Component
+  const handleLogout = async () => {
+    try {
+      
+      toast.loading("Logging out...");
+      await signOut();
+
+      toast.dismiss();
+      toast.success("Logged out successfully!");
+      router.replace("/login");
+    } catch (e) {
+      console.error(e);
+      toast.dismiss();
+      toast.error("Logout failed. Please try again.");
+    }
+  };
+
 
   return (
     <NextUINavbar
