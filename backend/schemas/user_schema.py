@@ -68,28 +68,35 @@ class User:
 
     @staticmethod
     def to_object(bson_document):
-        created_date = bson_document["created_date"] if bson_document["created_date"] is not str else (
-            Timestamp(datetime.strptime(bson_document["created_date"], "%a, %d %b %Y %H:%M:%S %Z"), 1))
-        updated_date = bson_document["updated_date"] if bson_document["updated_date"] is not str else (
-            Timestamp(datetime.strptime(bson_document["updated_date"], "%a, %d %b %Y %H:%M:%S %Z"), 1))
-        
-        last_login_date = None
-        if "last_login_date" in bson_document and bson_document["last_login_date"] is not None:
-            last_login_date = None if bson_document["updated_date"] is not str \
-            else (Timestamp(datetime.strptime(bson_document["last_login_date"], "%a, %d %b %Y %H:%M:%S %Z"), 1))
+        def parse_ts(field_name):
+            raw = bson_document.get(field_name)
+            if raw is None:
+                return None
+            # already a BSON Timestamp?
+            if isinstance(raw, Timestamp):
+                return raw
+            # a datetime coming straight from PyMongo?
+            if isinstance(raw, datetime):
+                # wrap it back into a BSON Timestamp if you really need that,
+                # or store a datetime directly; here we keep Timestamp for consistency:
+                seconds = int(raw.replace(tzinfo=timezone.utc).timestamp())
+                return Timestamp(datetime.fromtimestamp(seconds, timezone.utc), 1)
+            # a string (e.g. from to_json)
+            if isinstance(raw, str):
+                # ISO-8601 or your specific format
+                dt = datetime.fromisoformat(raw)
+                seconds = int(dt.replace(tzinfo=timezone.utc).timestamp())
+                return Timestamp(datetime.fromtimestamp(seconds, timezone.utc), 1)
+            raise TypeError(f"Unexpected type for {field_name}: {type(raw)}")
 
         return User(
-            _id=None if bson_document["_id"] is None else str(
-                bson_document["_id"]),
+            _id=str(bson_document.get("_id")) if bson_document.get("_id") else None,
             name=bson_document["name"],
             email=bson_document["email"],
             password=bson_document["password"],
             user_type=bson_document["user_type"],
-            account_status=bson_document["account_status"],
-            created_date=Timestamp(datetime.now(), 1) if bson_document["created_date"] is None else
-            created_date,
-            updated_date=Timestamp(datetime.now(), 1) if bson_document["updated_date"] is None else
-            updated_date,
-            last_login_date=None if "last_login_date" not in bson_document or bson_document["last_login_date"] is None else
-            last_login_date
+            account_status=bson_document.get("account_status", 1),
+            created_date=parse_ts("created_date") or Timestamp(datetime.utcnow(),1),
+            updated_date=parse_ts("updated_date") or Timestamp(datetime.utcnow(),1),
+            last_login_date=parse_ts("last_login_date")
         )
