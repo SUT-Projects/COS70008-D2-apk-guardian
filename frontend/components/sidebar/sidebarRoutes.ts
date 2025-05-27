@@ -14,8 +14,13 @@ export const ADMIN_ROUTES: Array<RouteInterface> = [
     icon: Dashboard,
   },
   {
-    path: "/admin/manage-users",
-    label: "Manage Users",
+    path: "/admin/manage/admin-users",
+    label: "Admins",
+    icon: PeopleIcon,
+  },
+  {
+    path: "/admin/manage/users",
+    label: "End Users",
     icon: PeopleIcon,
   },
   {
