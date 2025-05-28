@@ -12,7 +12,7 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 import { roboto } from "@/config/fonts";
@@ -37,7 +37,7 @@ export default function LoginPage() {
     // // Add a 2-second delay before outputting the form data.
     // await new Promise((resolve) => setTimeout(resolve, 2000));
     // console.log("Submitted data:", data);
-    const callbackUrl = searchParams.get("callbackUrl") || "/user/dashboard";
+    // const callbackUrl = searchParams.get("callbackUrl") || "/user/dashboard";
 
     try {
       const result = await signIn("credentials", {
@@ -50,8 +50,21 @@ export default function LoginPage() {
       if (result?.error) {
         setErrorMsg(result.error);
       } else {
-        // Redirect to the callback URL after a successful login
-        router.push(callbackUrl);
+        // 1) grab the fresh session
+        const session = await getSession();
+
+        // 2) pull out userType
+        const userType = (session?.user as any)?.user_type as number;
+
+        // 3) redirect
+        if (userType === 0) {
+          router.replace("/admin");
+        } else if (userType === 1) {
+          router.replace("/user");
+        } else {
+          // fallback
+          router.push("/");
+        }
       }
     } catch (error) {
       console.log("Error during sign-in:", error);

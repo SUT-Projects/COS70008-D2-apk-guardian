@@ -7,7 +7,7 @@ import { button as buttonStyles } from "@heroui/theme";
 
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
-import { GithubIcon } from "@/components/icons";
+import { GithubIcon } from "@/components/icons/no-data-icon";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
