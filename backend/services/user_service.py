@@ -4,6 +4,7 @@ from schemas import User
 from hashlib import sha256
 from bson.timestamp import Timestamp
 from datetime import datetime
+import traceback
 
 
 class UserService:    
@@ -22,8 +23,34 @@ class UserService:
         fetched_document = self.db.get_collection(self.collection_name).find_one(filter_dict)
         return fetched_document if fetched_document is not None else None
     
+    
     def get_user_by_id(self, user_id):
         pass
+
+    def get_user_by_filters(self, filters: dict):
+        if len(filters) == 0:
+            return jsonify({
+                "error": True,
+                "message": "No filters provided to search for user",
+            }), 200
+        
+        try:
+            fetched_documents = list(self.db.get_collection(self.collection_name).find(filters))
+            fetched_users = [User.to_object(user_doc).to_json() for user_doc in fetched_documents]
+            
+            return jsonify({
+                "error": False,
+                "total_users": len(fetched_users),
+                "data": fetched_users,
+            }), 200
+
+        except Exception as ex:
+            print(ex)
+            return jsonify({
+                "error": True,
+                "message": str(ex),
+                "status": 500
+            }), 500
     
     def find_all(self):
         """
@@ -104,7 +131,6 @@ class UserService:
                 password=sha256(request_json["password"].encode()).hexdigest(),
                 user_type=0 if request_json["userType"] is None else request_json["userType"],
                 account_status=1,
-                department=request_json["department"],
                 created_date=Timestamp(datetime.now(), 1),
                 updated_date=Timestamp(datetime.now(), 1)
             )
@@ -128,21 +154,43 @@ class UserService:
 
     def update_user(self, user_id, user_data):
         try:
+            user_data["updated_date"] = Timestamp(datetime.now(), 1)
             updated_result = self.db.update_one(self.collection_name, user_id, user_data)
 
             if isinstance(updated_result, str):
                 # If the result is an error message string
                 return {"error": True, "message": updated_result}
 
-            if updated_result.modified_count == 0:
-                return {"error": True, "message": "No changes made or user not found."}
+            # 3b) PyMongo UpdateResult
+            if hasattr(updated_result, "modified_count"):
+                if updated_result.modified_count == 0:
+                    return {
+                        "error": True,
+                        "message": "No changes made or user not found."
+                    }
+                return {
+                    "error": False,
+                    "message": "User updated successfully."
+                }
 
+            # 3c) wrapper returned the updated document as a dict
+            updated_result = User.to_object(updated_result).to_json()
+            if isinstance(updated_result, dict):
+                return {
+                    "error": False,
+                    "message": "User updated successfully.",
+                    "data": updated_result
+                }
+
+            # 3d) unexpected return type
             return {
-                "error": False, 
-                "message": "User updated successfully."
+                "error": True,
+                "message": f"Unexpected update result type: {type(updated_result)}"
             }
 
         except Exception as e:
+            print(e)
+            traceback.print_exc()
             return {"error": True, "message": f"An error occurred: {str(e)}"}
 
     def delete_user(self, user_id):
