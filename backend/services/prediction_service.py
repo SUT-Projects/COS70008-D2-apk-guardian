@@ -10,6 +10,8 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
 from factory import get_database_instance
+from google.cloud.storage import Client as StorageClient
+from config import STORAGE_BUCKET_NAME
 
 
 
@@ -18,6 +20,9 @@ class PredictionService:
         # For CSV-based model — assuming these remain same as before
         self.db_instance = get_database_instance()
         self.collection_name = "predictions"
+        
+        self.storage_client = StorageClient()
+        self.bucket = self.storage_client.bucket(STORAGE_BUCKET_NAME)
 
         self.csv_scaler = joblib.load(path.join(model_dir, 'scaler.pkl'))
         self.encoder = tf.keras.models.load_model(
